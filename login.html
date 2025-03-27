@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Вход | ASTRO DELIVERY</title>
+    <link rel="stylesheet" href="style.css"> 
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-form">
+            <h1>Вход</h1>
+            <form id="loginForm">
+                <div class="form-group">
+                    <label for="email">Email:</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="password">Пароль:</label>
+                    <input type="password" id="password" name="password" required>
+                </div>
+                <button type="submit">Войти</button>
+            </form>
+            <p>Нет аккаунта? <a href="registration.html">Зарегистрироваться</a></p> 
+        </div>
+    </div>
+
+    <script>
+        document.getElementById('loginForm').addEventListener('submit', function(event) {
+            event.preventDefault();
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            alert(`Вход выполнен: ${email}`);
+        });
+    </script>
+</body>
+</html>
