@@ -4,44 +4,166 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регистрация | ASTRO DELIVERY</title>
-    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css">
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f5f5f5;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+        }
+        .auth-container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+            width: 100%;
+            max-width: 400px;
+        }
+        .auth-form h1 {
+            text-align: center;
+            color: #2c3e50;
+            margin-bottom: 20px;
+        }
+        .form-group {
+            margin-bottom: 15px;
+        }
+        .form-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #333;
+        }
+        .form-group input {
+            width: 100%;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            width: 100%;
+            padding: 12px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-top: 10px;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        .phone-input {
+            margin-bottom: 15px;
+        }
+        .sms-code {
+            display: none;
+        }
+        .error {
+            color: red;
+            font-size: 14px;
+            margin-top: 5px;
+        }
+        .entry{
+            color: #2980b9;
+        }
+    </style>
 </head>
 <body>
     <div class="auth-container">
         <div class="auth-form">
             <h1>Регистрация</h1>
             <form id="registerForm">
-                <div class="form-group">
-                    <label for="reg-email">Email:</label>
-                    <input type="email" id="reg-email" name="reg-email" required>
+                <!-- Поле для телефона -->
+                <div class="form-group phone-input">
+                    <label for="phone">Номер телефона:</label>
+                    <input type="tel" id="phone" name="phone" required>
+                    <div id="phone-error" class="error"></div>
                 </div>
-                <div class="form-group">
+
+                <!-- Скрытое поле для SMS-кода -->
+                <div class="form-group sms-code" id="smsCodeGroup">
+                    <label for="sms-code">SMS-код:</label>
+                    <input type="text" id="sms-code" name="sms-code" maxlength="6">
+                    <button type="button" id="resend-sms">Отправить код повторно</button>
+                    <div id="sms-error" class="error"></div>
+                </div>
+
+                <!-- Пароль (показываем после подтверждения телефона) -->
+                <div class="form-group" id="passwordGroup">
                     <label for="reg-password">Пароль:</label>
                     <input type="password" id="reg-password" name="reg-password" required>
                 </div>
-                <div class="form-group">
-                    <label for="confirm-password">Подтвердите пароль:</label>
-                    <input type="password" id="confirm-password" name="confirm-password" required>
-                </div>
-                <button type="submit">Зарегистрироваться</button>
+
+                <button type="submit" id="submit-btn">Продолжить</button>
             </form>
-            <p>Уже есть аккаунт? <a href="login.html">Войти</a></p> 
+            <p>Уже есть аккаунт? <a class="entry" href="login.html">Войти</a></p>
         </div>
     </div>
 
+    <!-- Библиотека для валидации телефонов -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
     <script>
-        document.getElementById('registerForm').addEventListener('submit', function(event) {
+        // Инициализация маски телефона
+        const phoneInput = document.getElementById('phone');
+        const iti = window.intlTelInput(phoneInput, {
+            initialCountry: 'ru',
+            separateDialCode: true,
+            utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js'
+        });
+
+        const registerForm = document.getElementById('registerForm');
+        const smsCodeGroup = document.getElementById('smsCodeGroup');
+        const passwordGroup = document.getElementById('passwordGroup');
+        const submitBtn = document.getElementById('submit-btn');
+        let isPhoneVerified = false;
+
+        // Этап 1: Проверка телефона
+        registerForm.addEventListener('submit', async function(event) {
             event.preventDefault();
-            const email = document.getElementById('reg-email').value;
-            const password = document.getElementById('reg-password').value;
-            const confirmPassword = document.getElementById('confirm-password').value;
+            
+            if (!isPhoneVerified) {
+                const phone = iti.getNumber();
+                if (!iti.isValidNumber()) {
+                    document.getElementById('phone-error').textContent = 'Некорректный номер';
+                    return;
+                }
 
-            if (password !== confirmPassword) {
-                alert('Пароли не совпадают!');
-                return;
+                // Здесь должна быть отправка SMS (в реальном проекте - запрос к API)
+                console.log('Отправка SMS на номер:', phone);
+                alert(`SMS-код отправлен на номер ${phone}`);
+                
+                // Показываем поле для SMS-кода
+                smsCodeGroup.style.display = 'block';
+                submitBtn.textContent = 'Подтвердить код';
+                isPhoneVerified = true;
+            } 
+            // Этап 2: Проверка SMS-кода
+            else {
+                const smsCode = document.getElementById('sms-code').value;
+                if (smsCode.length !== 6 || !/^\d+$/.test(smsCode)) {
+                    document.getElementById('sms-error').textContent = 'Код должен содержать 6 цифр';
+                    return;
+                }
+
+                // Здесь проверка кода (в реальном проекте - запрос к API)
+                console.log('Проверка SMS-кода:', smsCode);
+                
+                // Если код верный, показываем поле для пароля
+                passwordGroup.style.display = 'block';
+                submitBtn.textContent = 'Зарегистрироваться';
             }
+        });
 
-            alert(`Регистрация выполнена: ${email}`);
+        // Повторная отправка SMS
+        document.getElementById('resend-sms').addEventListener('click', function() {
+            const phone = iti.getNumber();
+            alert(`Код повторно отправлен на ${phone}`);
         });
     </script>
 </body>
