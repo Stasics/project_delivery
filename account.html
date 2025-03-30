@@ -5,19 +5,30 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Личный кабинет | QUICK PARCEL</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="stylesheet" href="style.css" />
 </head>
 <body>
-    <div class="account-header">
-        <div class="logo">QUICK PARCEL</div>
-        <a href="index.html">Выйти</a>
-    </div>
-
+    <header>
+        <div class="header-content">
+            <div class="logo">
+                 <b id="reload-logo" onclick="window.location.href='index.html'">QUICK PARCEL</b>
+            </div>
+            <nav>
+                <ul>
+                    <li>
+                        <button class="login-button" >Выйти</button>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </header>
+    <div class="main-account-page">
     <div class="account-container">
         <div class="sidebar">
             <ul class="sidebar-menu">
                 <li><a href="#profile" class="active">Профиль</a></li>
                 <li><a href="#orders">Мои заказы</a></li>
-                <li><a href="#addresses">Мои адреса</a></li>
+                <li><a href="#addresses">Мой адрес</a></li>
             </ul>
         </div>
 
@@ -55,7 +66,12 @@
             </div>
         </div>
     </div>
-
+</div>
+    <footer>
+        <div class="footer-content">
+            <p>© 2025 QUICK PARCEL - курьерская компания.</p>
+        </div>
+    </footer>
     <script>
         // Переключение вкладок
         document.querySelectorAll('.sidebar-menu a').forEach(link => {

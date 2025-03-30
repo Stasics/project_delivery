@@ -5,13 +5,13 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="stylesheet" href="style.css" />
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <title>QUICKPARCEL</title>
+    <title>QUICK PARCEL - услуги курьерской компании.</title>
 </head>
 <body>
     <header>
         <div class="header-content">
             <div class="logo">
-                 <b>QUICK PARCEL</b>
+                 <b id="reload-logo">QUICK PARCEL</b>
             </div>
             <nav>
                 <ul>
@@ -26,7 +26,7 @@
     <div class="container">
         <section class="hero-container">
             <div class="hero--info">
-                <h1 class="fade-in-text">Доставлсяем надежно!</h1>
+                <h1 class="fade-in-text">Доставляем надежно!</h1>
                 <p class="fade-in-text">Мы обеспечиваем доставку по всей России за считанные дни. Просто рассчитайте стоимость и оформите заказ!</p>
                 <button class="hero-button" onclick="scrollToCalculator()">Рассчитать стоимость</button>
             </div>
@@ -79,12 +79,8 @@
                                 </select>
                             </div>
                         </div>
-                        <button type="submit" class="calculate-button">РАССЧИТАТЬ</button>
+                        <button type="submit" class="calculate-button" onclick="window.location.href='calculator.html'">РАССЧИТАТЬ</button>
                     </form>
-                    <div id="result">
-                        <p>Стоимость: <span id="price">0 руб.</span></p>
-                        <p>Время доставки: <span id="time">0 дней</span></p>
-                    </div>
             </section>
     </div>
     <div class="map_container">
@@ -92,7 +88,6 @@
     </div>
     <script src="https://api-maps.yandex.ru/2.1/?apikey=f2f1014b-bed7-4429-b12e-e46447e15a6b&lang=ru_RU" type="text/javascript"></script>
     <script>
-        
         ymaps.ready(init);
 
         function init() {
@@ -109,17 +104,15 @@
     </script>
     <footer>
         <div class="footer-content">
-            <p>© 2025 QUICK PARCEL. Все права защищены.</p>
+            <p>© 2025 QUICK PARCEL - курьерская компания.</p>
         </div>
     </footer>
 
     <script>
-        // Перезагрузка страницы при клике на логотип
         document.getElementById('reload-logo').addEventListener('click', function() {
             location.reload();
         });
 
-        // Плавная прокрутка к калькулятору
         function scrollToCalculator() {
             document.getElementById('frame-calculator').scrollIntoView({ behavior: 'smooth' });
         }
