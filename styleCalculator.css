@@ -82,7 +82,7 @@ width: 100%;
 .calculator_text {
     font-size: 24px;
     margin-bottom: 25px;
-    color: #005baa;
+    color: #3498db;
     font-weight: 600;
 }
 
@@ -118,7 +118,7 @@ width: 100%;
 
 .location-input input:focus {
     outline: none;
-    border-color: #005baa;
+    border-color: #3498db;
 }
 
 .location-swap {
@@ -163,11 +163,11 @@ width: 100%;
 }
 
 .option-card:hover {
-    border-color: #005baa;
+    border-color: #3498db;
 }
 
 .option-card.active {
-    border-color: #005baa;
+    border-color: #3498db;
     background-color: #f5f9ff;
 }
 
@@ -211,7 +211,29 @@ width: 100%;
 
 .form-group input:focus, .form-group select:focus {
     outline: none;
-    border-color: #005baa;
+    border-color: #3498db;
+}
+
+.weight-options {
+    margin-bottom: 30px;
+}
+
+.weight-input {
+    flex: 1;
+    position: relative;
+}
+
+.weight-input input {
+    width: 300px;
+    padding: 12px 15px;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    font-size: 16px;
+}
+
+.weight-input input:focus {
+    outline: none;
+    border-color: #3498db;
 }
 
 .payment-section {
@@ -233,11 +255,11 @@ width: 100%;
 }
 
 .payment-option:hover {
-    border-color: #005baa;
+    border-color: #3498db;
 }
 
 .payment-option.active {
-    border-color: #005baa;
+    border-color: #3498db;
     background-color: #f5f9ff;
 }
 
@@ -254,7 +276,7 @@ width: 100%;
 .check-title {
     font-size: 20px;
     margin-bottom: 20px;
-    color: #005baa;
+    color: #3498db;
     font-weight: 600;
 }
 
