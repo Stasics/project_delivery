@@ -5,6 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Регистрация | QUICK PARCEL</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/css/intlTelInput.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js"></script>
+    
     <style>
         body {
             font-family: 'Arial', sans-serif;
@@ -113,64 +116,66 @@
     </div>
 
     <!-- Библиотека для валидации телефонов -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/intlTelInput.min.js"></script>
-    <script>
-        // Инициализация маски телефона
-        const phoneInput = document.getElementById('phone');
-        const iti = window.intlTelInput(phoneInput, {
-            initialCountry: 'ru',
-            separateDialCode: true,
-            utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js'
-        });
+    <script src="js/script.js"></script>
+<script>
+  // Инициализация маски телефона
+  const phoneInput = document.getElementById('phone');
+  const iti = window.intlTelInput(phoneInput, {
+    initialCountry: 'ru',
+    utilsScript: 'https://cdnjs.cloudflare.com/ajax/libs/intl-tel-input/17.0.8/js/utils.js'
+  });
 
-        const registerForm = document.getElementById('registerForm');
-        const smsCodeGroup = document.getElementById('smsCodeGroup');
-        const passwordGroup = document.getElementById('passwordGroup');
-        const submitBtn = document.getElementById('submit-btn');
-        let isPhoneVerified = false;
+  document.getElementById('registerForm').addEventListener('submit', async (e) => {
+  e.preventDefault();
+  
+  const phone = iti.getNumber();
+  const password = document.getElementById('reg-password').value;
+  const confirmPassword = document.getElementById('confirm-password').value;
 
-        //Проверка телефона
-        registerForm.addEventListener('submit', async function(event) {
-            event.preventDefault();
-            
-            if (!isPhoneVerified) {
-                const phone = iti.getNumber();
-                if (!iti.isValidNumber()) {
-                    document.getElementById('phone-error').textContent = 'Некорректный номер';
-                    return;
-                }
+  // Валидация
+  if (!iti.isValidNumber()) {
+    alert('Введите корректный номер телефона');
+    return;
+  }
 
-                // Здесь должна быть отправка SMS (в реальном проекте - запрос к API)
-                console.log('Отправка SMS на номер:', phone);
-                alert(`SMS-код отправлен на номер ${phone}`);
-                
-                // Показываем поле для SMS-кода
-                smsCodeGroup.style.display = 'block';
-                submitBtn.textContent = 'Подтвердить код';
-                isPhoneVerified = true;
-            } 
-            //Проверка SMS-кода
-            else {
-                const smsCode = document.getElementById('sms-code').value;
-                if (smsCode.length !== 6 || !/^\d+$/.test(smsCode)) {
-                    document.getElementById('sms-error').textContent = 'Код должен содержать 6 цифр';
-                    return;
-                }
+  if (password !== confirmPassword) {
+    alert('Пароли не совпадают');
+    return;
+  }
 
-                // Здесь проверка кода (в реальном проекте - запрос к API)
-                console.log('Проверка SMS-кода:', smsCode);
-                
-                // Если код верный, показываем поле для пароля
-                passwordGroup.style.display = 'block';
-                submitBtn.textContent = 'Зарегистрироваться';
-            }
-        });
+  try {
+    // Формируем полные данные для бэкенда
+    const userData = {
+      email: `${phone.replace('+', '')}@temp.com`,
+      password: password,
+      phone: phone,
+      full_name: "Новый пользователь",  // Добавляем обязательное поле
+      is_courier: false                // Добавляем значение по умолчанию
+    };
 
-        // Повторная отправка SMS
-        document.getElementById('resend-sms').addEventListener('click', function() {
-            const phone = iti.getNumber();
-            alert(`Код повторно отправлен на ${phone}`);
-        });
-    </script>
+    // Отправка данных
+    const response = await fetch('http://localhost:8000/users/api/auth/register', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'Accept': 'application/json'
+      },
+      body: JSON.stringify(userData)
+    });
+
+    const data = await response.json();
+    
+    if (!response.ok) {
+      throw new Error(data.detail || 'Ошибка регистрации');
+    }
+
+    alert('Регистрация успешна! Войдите в систему.');
+    window.location.href = 'login.html';
+  } catch (error) {
+    console.error('Ошибка регистрации:', error);
+    alert(`Ошибка: ${error.message}`);
+  }
+});
+</script>
 </body>
 </html>

@@ -1,3 +1,32 @@
+<script src="js/script.js"></script>
+<script>
+  document.addEventListener('DOMContentLoaded', async () => {
+    if (!authToken) {
+      window.location.href = 'login.html';
+      return;
+    }
+
+    try {
+      // Получаем данные пользователя
+      const user = await makeRequest('/api/auth/me', 'GET');
+      document.querySelector('#profile input[name="name"]').value = user.name || '';
+      
+      // Получаем заказы
+      const orders = await makeRequest('/api/orders', 'GET');
+      const ordersContainer = document.querySelector('#orders');
+      orders.forEach(order => {
+        ordersContainer.innerHTML += `
+          <div class="order-card">
+            <h3>Заказ #${order.id}</h3>
+            <p>Статус: ${order.status}</p>
+          </div>
+        `;
+      });
+    } catch (error) {
+      console.error('Ошибка загрузки данных:', error);
+    }
+  });
+</script>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
