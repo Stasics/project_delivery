@@ -1,32 +1,64 @@
 <script src="js/script.js"></script>
 <script>
-  document.addEventListener('DOMContentLoaded', async () => {
-    if (!authToken) {
-      window.location.href = 'login.html';
-      return;
-    }
-
-    try {
-      // Получаем данные пользователя
-      const user = await makeRequest('/api/auth/me', 'GET');
-      document.querySelector('#profile input[name="name"]').value = user.name || '';
+    document.addEventListener('DOMContentLoaded', async () => {
+      const authToken = localStorage.getItem('authToken');
       
-      // Получаем заказы
-      const orders = await makeRequest('/api/orders', 'GET');
-      const ordersContainer = document.querySelector('#orders');
-      orders.forEach(order => {
-        ordersContainer.innerHTML += `
-          <div class="order-card">
-            <h3>Заказ #${order.id}</h3>
-            <p>Статус: ${order.status}</p>
-          </div>
-        `;
-      });
-    } catch (error) {
-      console.error('Ошибка загрузки данных:', error);
-    }
-  });
-</script>
+      if (!authToken) {
+        window.location.href = 'login.html';
+        return;
+      }
+  
+      try {
+        // Получаем данные пользователя
+        const response = await fetch('http://localhost:8000/users/api/auth/me', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+  
+        if (!response.ok) {
+          throw new Error('Ошибка загрузки данных');
+        }
+  
+        const user = await response.json();
+        
+        // Заполняем профиль
+        document.getElementById('profile-name').textContent = user.full_name || 'Не указано';
+        document.getElementById('profile-phone').textContent = user.phone || 'Не указано';
+        document.getElementById('profile-email').textContent = user.email || 'Не указано';
+        
+        // Здесь можно добавить загрузку заказов, когда будет готова соответствующая API
+        /*
+        const ordersResponse = await fetch('http://localhost:8000/users/api/packages', {
+          method: 'GET',
+          headers: {
+            'Authorization': `Bearer ${authToken}`
+          }
+        });
+        
+        if (ordersResponse.ok) {
+          const orders = await ordersResponse.json();
+          const ordersContainer = document.querySelector('#orders-container');
+          orders.forEach(order => {
+            ordersContainer.innerHTML += `
+              <div class="order-card">
+                <h3>Заказ #${order.tracking_number}</h3>
+                <p>Статус: ${order.status}</p>
+              </div>
+            `;
+          });
+        }
+        */
+        
+      } catch (error) {
+        console.error('Ошибка загрузки данных:', error);
+        alert('Ошибка загрузки данных. Попробуйте войти снова.');
+        localStorage.removeItem('authToken');
+        window.location.href = 'login.html';
+      }
+    });
+  </script>
 <!DOCTYPE html>
 <html lang="ru">
 <head>
@@ -34,71 +66,279 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Личный кабинет | QUICK PARCEL</title>
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
-    <link rel="stylesheet" href="personalCabinet.css" />
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Montserrat', sans-serif;
+            margin: 0;
+            padding: 0;
+            background-color: #f5f5f5;
+        }
+        .page-wrapper {
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+        }
+        header {
+            background-color: #2c3e50;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 15px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+       .logo {
+            font-size: 24px;
+            font-weight: 700;
+            color: #3498db;
+            cursor: pointer;
+        }
+        .logo b {
+            cursor: pointer;
+        }
+        nav ul {
+            list-style: none;
+            display: flex;
+            margin: 0;
+            padding: 0;
+        }
+        nav ul li {
+            margin-left: 20px;
+        }
+        .login-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 20px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .login-button:hover {
+            background-color: rgba(255,255,255,0.2);
+        }
+        .main-account-page {
+            flex: 1;
+            padding: 30px 0;
+        }
+        .account-container {
+            width: 90%;
+            max-width: 1200px;
+            margin: 0 auto;
+            display: flex;
+            gap: 30px;
+        }
+        .sidebar {
+            width: 250px;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 20px;
+        }
+        .sidebar-menu {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .sidebar-menu li {
+            margin-bottom: 10px;
+        }
+        .sidebar-menu a {
+            display: block;
+            padding: 10px 15px;
+            color: #333;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .sidebar-menu a:hover, .sidebar-menu a.active {
+            background-color: #f0f0f0;
+            color: #3498db;
+        }
+        .main-content {
+            flex: 1;
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.05);
+            padding: 30px;
+        }
+        .tab-content {
+            display: none;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        
+        /* Новые стили для профиля */
+        .profile-view {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+        }
+        .profile-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        .profile-phone {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 20px;
+        }
+        .profile-field {
+            margin-bottom: 15px;
+        }
+        .field-label {
+            font-size: 14px;
+            color: #777;
+            margin-bottom: 5px;
+        }
+        .field-value {
+            font-size: 16px;
+            color: #333;
+        }
+        .profile-id {
+            color: #4CAF50;
+            font-size: 14px;
+            margin-top: 20px;
+        }
+        .profile-id i {
+            margin-right: 5px;
+        }
+        .edit-profile-btn {
+            width: 100%;
+            padding: 12px;
+            background: #f5f5f5;
+            border: 1px solid #ddd;
+            border-radius: 5px;
+            font-weight: bold;
+            text-transform: uppercase;
+            cursor: pointer;
+            margin-top: 20px;
+        }
+        
+        /* Остальные стили */
+        .order-card {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 15px;
+        }
+        .address-card {
+            background: #f9f9f9;
+            border-radius: 8px;
+            padding: 15px;
+        }
+         footer {
+            background-color: #2c3e50;
+            color: white;
+            text-align: center;
+            padding: 20px;
+            font-size: 0.9rem;
+        }
+
+        /* Адаптивность */
+        @media (max-width: 768px) {
+            .hero--info h1 {
+                font-size: 2rem;
+            }
+            
+            .feature {
+                min-width: 150px;
+            }
+            
+            .input-group {
+                min-width: 100%;
+            }
+        }
+    </style>
 </head>
 <body>
     <div class="page-wrapper">
-    <header>
-        <div class="header-content">
-            <div class="logo">
-                 <b id="reload-logo" onclick="window.location.href='index.html'">QUICK PARCEL</b>
+        <header>
+            <div class="header-content">
+                <div class="logo">
+                    <a id="reload-logo" onclick="window.location.href='index.html'">QUICK PARCEL</a>
+                </div>
+                <nav>
+                    <ul>
+                        <li>
+                            <button class="login-button">Выйти</button>
+                        </li>
+                    </ul>
+                </nav>
             </div>
-            <nav>
-                <ul>
-                    <li>
-                        <button class="login-button" >Выйти</button>
-                    </li>
-                </ul>
-            </nav>
-        </div>
-    </header>
-    <div class="main-account-page">
-    <div class="account-container">
-        <div class="sidebar">
-            <ul class="sidebar-menu">
-                <li><a href="#profile" class="active">Профиль</a></li>
-                <li><a href="#orders">Мои заказы</a></li>
-                <li><a href="#addresses">Мой адрес</a></li>
-            </ul>
-        </div>
+        </header>
+        <div class="main-account-page">
+            <div class="account-container">
+                <div class="sidebar">
+                    <ul class="sidebar-menu">
+                        <li><a href="#profile" class="active">Профиль</a></li>
+                        <li><a href="#orders">Мои заказы</a></li>
+                        <li><a href="#addresses">Мой адрес</a></li>
+                    </ul>
+                </div>
 
-        <div class="main-content">
-            <div id="profile" class="tab-content active">
-                <h2>Профиль</h2>
-                <form>
-                    <div class="input-group">
-                        <label>Имя</label>
-                        <input type="text" value="">
-                    </div>
-                    <div class="input-group">
-                        <label>Email</label>
-                        <input type="email" value="">
-                    </div>
-                    <button class="save-button" type="submit">Сохранить</button>
-                </form>
-            </div>
+                <div class="main-content">
+                    <div id="profile" class="tab-content active">
+                        <h2>Профиль</h2>
+                        <div class="profile-view">
+                            <div class="profile-name" id="profile-name"></div>
+                            <div class="profile-phone" id="profile-phone"></div>
+                            
+                            <div class="profile-field">
+                                <div class="field-label">Email</div>
+                                <div class="field-value" id="profile-email"></div>
+                            </div>
+                            
+                            <div id="saved-order-section" class="saved-order-section" style="display: none;">
+                                <h3>Готовый к оформлению заказ</h3>
+                                <div id="saved-order-details" class="order-summary"></div>
+                                <button id="confirm-order-btn" class="confirm-order-btn">Оформить заказ</button>
+                            </div>
+                            
+                            <div id="no-order-message" class="no-order-message" style="display: none;">
+                                У вас нет сохраненных заказов для оформления
+                            </div>
 
-            <!-- Заказы -->
-            <div id="orders" class="tab-content">
-                <h2>История заказов</h2>
-                
-            </div>
-            <!-- Адреса -->
-            <div id="addresses" class="tab-content">
-                <h2>Мои адреса</h2>
-                <div class="address-card">
-                    <p></p>
+                            <div class="profile-id">
+                                <i class="fas fa-check-circle"></i> QPC ID
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Заказы -->
+                    <div id="orders" class="tab-content">
+                        <h2>История заказов</h2>
+                        <div id="orders-container"></div>
+                    </div>
+                    
+                    <!-- Адреса -->
+                    <div id="addresses" class="tab-content">
+                        <h2>Мои адреса</h2>
+                        <div class="address-card">
+                            <p></p>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
+        <footer>
+            <div class="footer-content">
+                <p>© 2025 QUICK PARCEL - курьерская компания.</p>
+            </div>
+        </footer>
     </div>
-</div>
-</div>
-    <footer>
-        <div class="footer-content">
-            <p>© 2025 QUICK PARCEL - курьерская компания.</p>
-        </div>
-    </footer>
+
     <script>
         // Переключение вкладок
         document.querySelectorAll('.sidebar-menu a').forEach(link => {
@@ -118,6 +358,63 @@
                 document.getElementById(tabId).classList.add('active');
                 this.classList.add('active');
             });
+        });
+
+        document.querySelector('.login-button').addEventListener('click', () => {
+            localStorage.removeItem('authToken');
+            window.location.href = 'login.html';
+        });
+
+        // Проверяем сохраненные данные при загрузке страницы
+        document.addEventListener('DOMContentLoaded', () => {
+            const savedData = JSON.parse(localStorage.getItem('deliveryData'));
+            const savedOrderSection = document.getElementById('saved-order-section');
+            const noOrderMessage = document.getElementById('no-order-message');
+            const orderDetails = document.getElementById('saved-order-details');
+
+            if (savedData && savedData.from && savedData.to && savedData.weight && savedData.price) {
+                // Показываем блок с сохраненным заказом
+                savedOrderSection.style.display = 'block';
+                noOrderMessage.style.display = 'none';
+                
+                // Форматируем тип доставки
+                const urgencyMap = {
+                    '1': 'Обычная',
+                    '2': 'Срочная',
+                    '3': 'Экспресс'
+                };
+                
+                // Форматируем цену (защита от null/undefined)
+                const formattedPrice = savedData.price 
+                    ? savedData.price.toLocaleString('ru-RU') 
+                    : '0';
+                
+                // Заполняем данные
+                orderDetails.innerHTML = `
+                    <p><strong>Откуда:</strong> ${savedData.from || 'Не указано'}</p>
+                    <p><strong>Куда:</strong> ${savedData.to || 'Не указано'}</p>
+                    <p><strong>Вес:</strong> ${savedData.weight || '0'} кг</p>
+                    <p><strong>Тип доставки:</strong> ${urgencyMap[savedData.urgency] || 'Обычная'}</p>
+                    <p><strong>Стоимость:</strong> ${formattedPrice} ₽</p>
+                `;
+
+                // Обработчик кнопки "Оформить заказ"
+                document.getElementById('confirm-order-btn').addEventListener('click', () => {
+                    // Здесь будет отправка данных на сервер
+                    alert(`Заказ оформлен! Номер: #${Math.floor(Math.random() * 10000)}`);
+                    localStorage.removeItem('deliveryData');
+                    savedOrderSection.style.display = 'none';
+                    noOrderMessage.style.display = 'block';
+                });
+            } else {
+                savedOrderSection.style.display = 'none';
+                noOrderMessage.style.display = 'block';
+                
+                // Очищаем неполные данные
+                if (savedData) {
+                    localStorage.removeItem('deliveryData');
+                }
+            }
         });
     </script>
 </body>

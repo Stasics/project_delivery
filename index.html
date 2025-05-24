@@ -60,11 +60,11 @@
                         <div class="input-row">
                             <div class="input-group">
                                 <label for="from">Откуда:</label>
-                                <input type="text" id="from" name="from" placeholder="Город отправления" required>
+                                <input type="text" id="from" name="from" placeholder="Город отправления" list="citiesList" required>
                             </div>
                             <div class="input-group">
                                 <label for="to">Куда:</label>
-                                <input type="text" id="to" name="to" placeholder="Город назначения" required>
+                                <input type="text" id="to" name="to" placeholder="Город назначения" list="citiesList" required>
                             </div>
                             <div class="input-group">
                                 <label for="weight">Вес (кг):</label>
@@ -79,43 +79,127 @@
                                 </select>
                             </div>
                         </div>
-                        <button type="submit" class="calculate-button" onclick="window.location.href='calculator.html'">РАССЧИТАТЬ</button>
+                        <button type="submit" class="calculate-button">РАССЧИТАТЬ</button>
                     </form>
             </section>
     </div>
+
+    <!-- Список городов для автодополнения -->
+    <datalist id="citiesList">
+        <option value="Москва">
+        <option value="Санкт-Петербург">
+        <option value="Новосибирск">
+        <option value="Екатеринбург">
+        <option value="Нижний Новгород">
+        <option value="Казань">
+        <option value="Челябинск">
+        <option value="Омск">
+        <option value="Самара">
+        <option value="Ростов-на-Дону">
+        <option value="Уфа">
+        <option value="Красноярск">
+        <option value="Пермь">
+        <option value="Воронеж">
+        <option value="Волгоград">
+        <option value="Симферополь">
+    </datalist>
+
     <div class="map_container">
         <div id="map" style="width: 100%; height: 400px;"></div>
     </div>
+      <footer>
+        <div class="footer-content">
+            <p>© 2025 QUICK PARCEL - курьерская компания.</p>
+        </div>
+    </footer>
     <script src="https://api-maps.yandex.ru/2.1/?apikey=f2f1014b-bed7-4429-b12e-e46447e15a6b&lang=ru_RU" type="text/javascript"></script>
     <script>
         ymaps.ready(init);
-
+        
         function init() {
             const map = new ymaps.Map("map", {
                 center: [44.952116, 34.102411], 
                 zoom: 12 
             });
-
-            const placemark = new ymaps.Placemark([44.952116, 34.102411], {
-            });
-
+        
+            const placemark = new ymaps.Placemark([44.952116, 34.102411], {});
             map.geoObjects.add(placemark);
         }
-    </script>
-    <footer>
-        <div class="footer-content">
-            <p>© 2025 QUICK PARCEL - курьерская компания.</p>
-        </div>
-    </footer>
-
-    <script>
-        document.getElementById('reload-logo').addEventListener('click', function() {
-            location.reload();
+        
+        function calculatePrice(from, to, weight, urgency) {
+            const basePrices = {
+                "Москва": 200, "Санкт-Петербург": 240, "Нижний Новгород": 260,
+                "Казань": 280, "Ростов-на-Дону": 300, "Воронеж": 300,
+                "Волгоград": 320, "Екатеринбург": 340, "Уфа": 360,
+                "Пермь": 380, "Челябинск": 400, "Омск": 440,
+                "Новосибирск": 480, "Красноярск": 520, "Симферополь": 360
+            };
+            
+            const urgencyMultipliers = { "1": 1.0, "2": 1.5, "3": 2.0 };
+                
+                const fromPrice = basePrices[from] || 400;
+                const toPrice = basePrices[to] || 400;
+                const distanceFactor = Math.abs(fromPrice - toPrice) / 100 ;
+                
+                return Math.round((fromPrice + toPrice) * distanceFactor * weight * urgencyMultipliers[urgency]);
+            }
+        
+        document.getElementById('delivery-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const from = document.getElementById('from').value.trim();
+            const to = document.getElementById('to').value.trim();
+            const weight = parseFloat(document.getElementById('weight').value);
+            const urgency = document.getElementById('urgency').value;
+        
+            // Валидация
+            const validCities = ["Москва", "Санкт-Петербург", "Новосибирск", "Екатеринбург", "Нижний Новгород", "Казань", "Челябинск", "Омск", "Самара", "Ростов-на-Дону","Уфа", "Красноярск", "Пермь", "Воронеж", "Волгоград", "Симферополь"];
+            if (!validCities.includes(from) || !validCities.includes(to)) {
+                alert('Укажите города из списка доступных!');
+                return;
+            }
+        
+            if (isNaN(weight) || weight < 0.1 || weight > 1000) {
+                alert('Вес должен быть от 0.1 до 1000 кг!');
+                return;
+            }
+        
+            // Расчет и сохранение
+            const price = calculatePrice(from, to, weight, urgency);
+            localStorage.setItem('deliveryData', JSON.stringify({
+                from, to, weight, urgency, price
+            }));
+        
+            setTimeout(() => window.location.href = 'calculator.html', 300);
         });
-
+        
+        document.getElementById('reload-logo').addEventListener('click', () => {
+            window.location.href = 'index.html';
+        });
+        
         function scrollToCalculator() {
-            document.getElementById('frame-calculator').scrollIntoView({ behavior: 'smooth' });
+            document.getElementById('frame-calculator').scrollIntoView({ 
+                behavior: 'smooth' 
+            });
         }
+    </script>
+    <script>
+        // Проверка авторизации и изменение кнопки
+        document.addEventListener('DOMContentLoaded', () => {
+            const authToken = localStorage.getItem('authToken');
+            const loginButton = document.querySelector('.login-button');
+            
+            if (authToken && loginButton) {
+                loginButton.textContent = 'Личный кабинет';
+                loginButton.onclick = () => {
+                    window.location.href = 'account.html';
+                };
+            } else {
+                loginButton.onclick = () => {
+                    window.location.href = 'login.html';
+                };
+            }
+        });
     </script>
 </body>
 </html>
