@@ -306,10 +306,6 @@
                                 <div id="saved-order-details" class="order-summary"></div>
                                 <button id="confirm-order-btn" class="confirm-order-btn">Оформить заказ</button>
                             </div>
-                            
-                            <div id="no-order-message" class="no-order-message" style="display: none;">
-                                У вас нет сохраненных заказов для оформления
-                            </div>
 
                             <div class="profile-id">
                                 <i class="fas fa-check-circle"></i> QPC ID
@@ -320,6 +316,9 @@
                     <!-- Заказы -->
                     <div id="orders" class="tab-content">
                         <h2>История заказов</h2>
+                        <div id="no-orders-message" class="no-orders-message" style="display: none;">
+                            У вас пока нет заказов
+                        </div>
                         <div id="orders-container"></div>
                     </div>
                     
@@ -372,11 +371,9 @@
             const savedOrderSection = document.getElementById('saved-order-section');
             const noOrderMessage = document.getElementById('no-order-message');
             const orderDetails = document.getElementById('saved-order-details');
+            const ordersContainer = document.getElementById('orders-container');
 
             if (savedData && savedData.from && savedData.to && savedData.weight && savedData.price) {
-                // Показываем блок с сохраненным заказом
-                savedOrderSection.style.display = 'block';
-                noOrderMessage.style.display = 'none';
                 
                 // Форматируем тип доставки
                 const urgencyMap = {
@@ -390,33 +387,39 @@
                     ? savedData.price.toLocaleString('ru-RU') 
                     : '0';
                 
-                // Заполняем данные
-                orderDetails.innerHTML = `
-                    <p><strong>Откуда:</strong> ${savedData.from || 'Не указано'}</p>
-                    <p><strong>Куда:</strong> ${savedData.to || 'Не указано'}</p>
-                    <p><strong>Вес:</strong> ${savedData.weight || '0'} кг</p>
-                    <p><strong>Тип доставки:</strong> ${urgencyMap[savedData.urgency] || 'Обычная'}</p>
-                    <p><strong>Стоимость:</strong> ${formattedPrice} ₽</p>
-                `;
+                const orderHTML = `
+                <div class="order-card">
+                    <h3>Заказ #${Math.floor(Math.random() * 10000)}</h3>
+                    <p><strong>Откуда:</strong> ${savedData.from}</p>
+                    <p><strong>Куда:</strong> ${savedData.to}</p>
+                    <p><strong>Вес:</strong> ${savedData.weight} кг</p>
+                    <p><strong>Тип:</strong> ${urgencyMap[savedData.urgency]}</p>
+                    <p><strong>Стоимость:</strong> ${savedData.price.toLocaleString('ru-RU')} ₽</p>
+                    <p><strong>Статус:</strong> В обработке</p>
+                </div>
+            `   ;
 
-                // Обработчик кнопки "Оформить заказ"
-                document.getElementById('confirm-order-btn').addEventListener('click', () => {
-                    // Здесь будет отправка данных на сервер
-                    alert(`Заказ оформлен! Номер: #${Math.floor(Math.random() * 10000)}`);
-                    localStorage.removeItem('deliveryData');
-                    savedOrderSection.style.display = 'none';
-                    noOrderMessage.style.display = 'block';
-                });
-            } else {
-                savedOrderSection.style.display = 'none';
-                noOrderMessage.style.display = 'block';
+                // Добавляем заказ во вкладку "Мои заказы"
+                ordersContainer.innerHTML = orderHTML + ordersContainer.innerHTML;
                 
-                // Очищаем неполные данные
-                if (savedData) {
-                    localStorage.removeItem('deliveryData');
-                }
+                // Очищаем сохранённые данные
+                localStorage.removeItem('deliveryData');
+                
+                // Показываем уведомление в профиле
+                const ordersTabLink = document.querySelector('.sidebar-menu a[href="#orders"]');
+                const ordersTabContent = document.getElementById('orders');
+                
+                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+                document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
+                
+                ordersTabContent.classList.add('active');
+                ordersTabLink.classList.add('active');
+                ordersTabContent.scrollIntoView({ behavior: 'smooth' });
+                
+                // Скрываем сообщение "нет заказов"
+                document.getElementById('no-orders-message').style.display = 'none';
             }
-        });
+        }); 
     </script>
 </body>
 </html>

@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
     <link rel="stylesheet" href="styleCalculator.css" />
+      <link rel="shortcut icon" href="favicon.ico" type="image/x-icon">
     <title>QUICKPARCEL - Калькулятор</title>
 </head>
 <body>
@@ -101,6 +102,9 @@
                     </div>
                 </div>
             </div>
+            <div class="redo-payment">
+                <button class="redo-button">Пересчитать</button>
+            </div>
         </div>
         
         <div class="check">
@@ -111,12 +115,8 @@
                     <span>0 ₽</span>
                 </div>
                 <div class="summary-item">
-                    <span>Сбор за объявленную стоимость</span>
-                    <span>0 ₽</span>
-                </div>
-                <div class="summary-item">
                     <span>Страховка</span>
-                    <span>0 ₽</span>
+                    <span>300 ₽</span>
                 </div>
                 <div class="summary-item summary-total">
                     <span>Итого</span>
@@ -222,8 +222,14 @@
                 console.log('Сохраненные данные:', deliveryData); // Для отладки
                 localStorage.setItem('deliveryData', JSON.stringify(deliveryData));
                 
-                // Перенаправляем на страницу входа
-                window.location.href = 'login.html?redirect=account';
+                const authToken = localStorage.getItem('authToken');
+                if (authToken) {
+                    // Если авторизован - сразу в личный кабинет
+                    window.location.href = 'account.html';
+                } else {
+                    // Если не авторизован - на страницу входа с редиректом
+                    window.location.href = 'login.html?redirect=account';
+                }
             });
     
             // Функция обновления отображения цены
