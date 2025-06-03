@@ -28,9 +28,7 @@
         document.getElementById('profile-phone').textContent = user.phone || 'Не указано';
         document.getElementById('profile-email').textContent = user.email || 'Не указано';
         
-        // Здесь можно добавить загрузку заказов, когда будет готова соответствующая API
-        /*
-        const ordersResponse = await fetch('http://localhost:8000/users/api/packages', {
+        const ordersResponse = await fetch('http://localhost:8000/users/api/auth/packages/', {
           method: 'GET',
           headers: {
             'Authorization': `Bearer ${authToken}`
@@ -40,16 +38,34 @@
         if (ordersResponse.ok) {
           const orders = await ordersResponse.json();
           const ordersContainer = document.querySelector('#orders-container');
-          orders.forEach(order => {
-            ordersContainer.innerHTML += `
-              <div class="order-card">
+          
+          if (orders.length === 0) {
+            document.getElementById('no-orders-message').style.display = 'block';
+          } else {
+            orders.forEach(order => {
+              const orderCard = document.createElement('div');
+              orderCard.className = 'order-card';
+              orderCard.innerHTML = `
                 <h3>Заказ #${order.tracking_number}</h3>
-                <p>Статус: ${order.status}</p>
-              </div>
-            `;
-          });
+                <p><strong>ПВЗ назначения:</strong> ${order.destination_pvz}</p>
+                <p><strong>Статус:</strong> ${order.status}</p>
+              `;
+              
+              // Добавляем кнопку оплаты, если заказ не оплачен
+              if (order.status === 'created') {
+                const payButton = document.createElement('button');
+                payButton.className = 'pay-button';
+                payButton.textContent = 'Оплатить';
+                payButton.addEventListener('click', () => {
+                  payOrder(order.tracking_number);
+                });
+                orderCard.appendChild(payButton);
+              }
+              
+              ordersContainer.appendChild(orderCard);
+            });
+          }
         }
-        */
         
       } catch (error) {
         console.error('Ошибка загрузки данных:', error);
@@ -58,6 +74,60 @@
         window.location.href = 'login.html';
       }
     });
+// Функция для оплаты заказа
+async function payOrder(trackingNumber) {
+      try {
+        const authToken = localStorage.getItem('authToken');
+        const response = await fetch(`http://localhost:8000/users/api/auth/packages/${trackingNumber}/pay`, {
+          method: 'PUT',
+          headers: {
+            'Authorization': `Bearer ${authToken}`,
+            'Content-Type': 'application/json'
+          }
+        });
+        
+        if (response.ok) {
+          openPaymentModal(trackingNumber);
+        } else {
+          throw new Error('Ошибка при обновлении статуса заказа');
+        }
+      } catch (error) {
+        console.error('Ошибка:', error);
+        alert('Произошла ошибка при попытке оплаты');
+      }
+    }
+// Функция для открытия модального окна оплаты
+    function openPaymentModal(orderId) {
+      document.getElementById('payment-modal').classList.add('active');
+      
+      // Обработчики для кнопок банков
+      document.querySelectorAll('.bank-button').forEach(button => {
+        button.addEventListener('click', function(e) {
+          if (e.target.tagName === 'A') {
+            closePaymentModal();
+            // Обновляем статус заказа
+            const orderCards = document.querySelectorAll('.order-card');
+            orderCards.forEach(card => {
+              if (card.querySelector('h3').textContent.includes(orderId)) {
+                const statusElement = card.querySelector('p:last-of-type');
+                if (statusElement) {
+                  statusElement.textContent = 'Статус: Оплачен';
+                }
+                const payButton = card.querySelector('.pay-button');
+                if (payButton) {
+                  payButton.remove();
+                }
+              }
+            });
+          }
+        });
+      });
+    }
+    
+    // Функция для закрытия модального окна оплаты
+    function closePaymentModal() {
+      document.getElementById('payment-modal').classList.remove('active');
+    }
   </script>
 <!DOCTYPE html>
 <html lang="ru">
@@ -234,11 +304,121 @@
             padding: 15px;
             margin-bottom: 15px;
         }
-        .address-card {
+
+        /* Стили для заказов */
+        .order-card {
             background: #f9f9f9;
             border-radius: 8px;
             padding: 15px;
+            margin-bottom: 15px;
+            position: relative;
         }
+        .order-card h3 {
+            margin-top: 0;
+        }
+        .order-card p {
+            margin-bottom: 10px;
+        }
+        .pay-button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+        .pay-button:hover {
+            background-color: #2980b9;
+        }
+        
+        /* Модальное окно для оплаты */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 1000;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s;
+        }
+        .modal-overlay.active {
+            opacity: 1;
+            visibility: visible;
+        }
+        .modal-content {
+            background: white;
+            padding: 25px;
+            border-radius: 10px;
+            width: 90%;
+            max-width: 500px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        .modal-title {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #2c3e50;
+        }
+        .modal-subtitle {
+            font-size: 16px;
+            color: #7f8c8d;
+            margin-bottom: 20px;
+        }
+        .bank-list {
+            margin-bottom: 25px;
+        }
+         .bank-button {
+        display: flex;
+        align-items: center;
+        width: 100%; /* Занимает всю ширину списка */
+        padding: 12px 15px;
+        margin-bottom: 10px; /* Только нижний отступ */
+        box-sizing: border-box; /* Важно! */
+        border: 1px solid #ddd;
+        border-radius: 8px;
+        text-decoration: none;
+        color: #333;
+    }
+        .bank-button:hover {
+            background-color: #e9ecef;
+            border-color: #adb5bd;
+        }
+        .bank-button i {
+            margin-right: 10px;
+            color: #3498db;
+        }
+        .bank-logo {
+  width: 24px;
+  height: 24px;
+  object-fit: contain;
+  margin-right: 10px;
+  vertical-align: middle;
+  border-radius: 3px; /* Для красоты */
+}
+        .cancel-button {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #7f8c8d;
+            border: none;
+            background: none;
+        }
+        .cookies-notice {
+            font-size: 12px;
+            color: #95a5a6;
+            margin-top: 20px;
+            text-align: center;
+        }
+
          footer {
             background-color: #2c3e50;
             color: white;
@@ -285,7 +465,6 @@
                     <ul class="sidebar-menu">
                         <li><a href="#profile" class="active">Профиль</a></li>
                         <li><a href="#orders">Мои заказы</a></li>
-                        <li><a href="#addresses">Мой адрес</a></li>
                     </ul>
                 </div>
 
@@ -315,23 +494,51 @@
 
                     <!-- Заказы -->
                     <div id="orders" class="tab-content">
-                        <h2>История заказов</h2>
+                        <h2>Заказы</h2>
                         <div id="no-orders-message" class="no-orders-message" style="display: none;">
                             У вас пока нет заказов
                         </div>
                         <div id="orders-container"></div>
                     </div>
-                    
-                    <!-- Адреса -->
-                    <div id="addresses" class="tab-content">
-                        <h2>Мои адреса</h2>
-                        <div class="address-card">
-                            <p></p>
-                        </div>
-                    </div>
                 </div>
             </div>
         </div>
+
+        <!-- Модальное окно для оплаты -->
+        <div class="modal-overlay" id="payment-modal">
+    <div class="modal-content">
+        <h2 class="modal-title">Выберите банковское приложение для оплаты</h2>
+        
+        <div class="bank-list">
+            <a href="https://online.sberbank.ru" class="bank-button" target="_blank">
+                 <img src="https://logo.clearbit.com/sberbank.ru" alt="Сбербанк" class="bank-logo">
+                 Сбербанк
+            </a>
+            <a href="https://www.tinkoff.ru" class="bank-button" target="_blank">
+                <img src="https://logo.clearbit.com/tinkoff.ru?size=40" alt="Тинькофф" class="bank-logo">
+                Тинькофф Банк
+            </a>
+            <a href="#" class="bank-button">
+                <img src="https://favicon.yandex.net/favicon/vtb.ru" alt="ВТБ" class="bank-logo">
+                ВТБ
+            </a>
+            <a href="#" class="bank-button">
+                <img src="https://logo.clearbit.com/alfabank.ru?size=40&format=png" alt="Альфа-Банк" class="bank-logo">
+                Альфа-Банк
+            </a>
+            <a href="#" class="bank-button">
+                <img src="https://favicon.yandex.net/favicon/raiffeisen.ru" alt="Райффайзенбанк" class="bank-logo">
+                Райффайзенбанк
+            </a>
+           <a href="#" class="bank-button">
+                <img src="https://logo.clearbit.com/gazprombank.ru?size=40&format=png" alt="Газпромбанк" class="bank-logo">
+                Газпромбанк
+            </a>
+            <button class="cancel-button">Отменить оплату</button>
+        </div>
+    </div>
+</div>
+
         <footer>
             <div class="footer-content">
                 <p>© 2025 QUICK PARCEL - курьерская компания.</p>
@@ -365,8 +572,10 @@
             window.location.href = 'login.html';
         });
 
+        document.querySelector('.cancel-button').addEventListener('click', closePaymentModal);
+
         // Проверяем сохраненные данные при загрузке страницы
-        document.addEventListener('DOMContentLoaded', () => {
+        document.addEventListener('DOMContentLoaded', async () => {
             const savedData = JSON.parse(localStorage.getItem('deliveryData'));
             const savedOrderSection = document.getElementById('saved-order-section');
             const noOrderMessage = document.getElementById('no-order-message');
@@ -374,52 +583,87 @@
             const ordersContainer = document.getElementById('orders-container');
 
             if (savedData && savedData.from && savedData.to && savedData.weight && savedData.price) {
-                
-                // Форматируем тип доставки
-                const urgencyMap = {
-                    '1': 'Обычная',
-                    '2': 'Срочная',
-                    '3': 'Экспресс'
-                };
-                
-                // Форматируем цену (защита от null/undefined)
-                const formattedPrice = savedData.price 
-                    ? savedData.price.toLocaleString('ru-RU') 
-                    : '0';
-                
-                const orderHTML = `
-                <div class="order-card">
-                    <h3>Заказ #${Math.floor(Math.random() * 10000)}</h3>
-                    <p><strong>Откуда:</strong> ${savedData.from}</p>
-                    <p><strong>Куда:</strong> ${savedData.to}</p>
-                    <p><strong>Вес:</strong> ${savedData.weight} кг</p>
-                    <p><strong>Тип:</strong> ${urgencyMap[savedData.urgency]}</p>
-                    <p><strong>Стоимость:</strong> ${savedData.price.toLocaleString('ru-RU')} ₽</p>
-                    <p><strong>Статус:</strong> В обработке</p>
-                </div>
-            `   ;
+                try {
+                    const authToken = localStorage.getItem('authToken');
+                    if (!authToken) {
+                        window.location.href = 'login.html';
+                        return;
+                    }
 
-                // Добавляем заказ во вкладку "Мои заказы"
-                ordersContainer.innerHTML = orderHTML + ordersContainer.innerHTML;
-                
-                // Очищаем сохранённые данные
-                localStorage.removeItem('deliveryData');
-                
-                // Показываем уведомление в профиле
-                const ordersTabLink = document.querySelector('.sidebar-menu a[href="#orders"]');
-                const ordersTabContent = document.getElementById('orders');
-                
-                document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
-                document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
-                
-                ordersTabContent.classList.add('active');
-                ordersTabLink.classList.add('active');
-                ordersTabContent.scrollIntoView({ behavior: 'smooth' });
-                
-                // Скрываем сообщение "нет заказов"
-                document.getElementById('no-orders-message').style.display = 'none';
+                    // First get user data
+                    const userResponse = await fetch('http://localhost:8000/users/api/auth/me', {
+                        method: 'GET',
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`
+                        }
+                    });
+
+                    if (!userResponse.ok) {
+                        throw new Error('Failed to get user data');
+                    }
+
+                    const user = await userResponse.json();
+
+                    // Then create package
+                    const response = await fetch('http://localhost:8000/users/api/auth/packages/', {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${authToken}`,
+                            'Content-Type': 'application/json'
+                        },
+                        body: JSON.stringify({
+                            tracking_number: `QP-${Date.now()}`,
+                            destination_pvz: savedData.to,
+                            user_id: user.id
+                        })
+                    });
+
+                    if (response.ok) {
+                        const newPackage = await response.json();
+                        
+                        // Format delivery type
+                        const urgencyMap = {
+                            '1': 'Обычная',
+                            '2': 'Срочная',
+                            '3': 'Экспресс'
+                        };
+                        
+                        const orderHTML = `
+                            <div class="order-card">
+                                <h3>Заказ #${newPackage.tracking_number}</h3>
+                                <p><strong>Откуда:</strong> ${savedData.from}</p>
+                                <p><strong>Куда:</strong> ${savedData.to}</p>
+                                <p><strong>Вес:</strong> ${savedData.weight} кг</p>
+                                <p><strong>Тип:</strong> ${urgencyMap[savedData.urgency]}</p>
+                                <p><strong>Стоимость:</strong> ${savedData.price.toLocaleString('ru-RU')} ₽</p>
+                                <p><strong>Статус:</strong> ${newPackage.status}</p>
+                                ${newPackage.status === 'created' ? 
+                                    '<button class="pay-button" onclick="payOrder(\'' + newPackage.tracking_number + '\')">Оплатить</button>' : 
+                                    ''}
+                            </div>
+                        `;
+
+                        ordersContainer.innerHTML = orderHTML + ordersContainer.innerHTML;
+                        localStorage.removeItem('deliveryData');
+                        document.getElementById('no-orders-message').style.display = 'none';
+                        
+                        // Switch to orders tab
+                        const ordersTabLink = document.querySelector('.sidebar-menu a[href="#orders"]');
+                        const ordersTabContent = document.getElementById('orders');
+                        
+                        document.querySelectorAll('.tab-content').forEach(tab => tab.classList.remove('active'));
+                        document.querySelectorAll('.sidebar-menu a').forEach(a => a.classList.remove('active'));
+                        
+                        ordersTabContent.classList.add('active');
+                        ordersTabLink.classList.add('active');
+                    }
+                } catch (error) {
+                    console.error('Ошибка создания заказа:', error);
+                    alert('Не удалось создать заказ. Попробуйте ещё раз.');
+                }
             }
-        }); 
+        });
+         
     </script>
 </body>
 </html>
