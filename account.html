@@ -776,7 +776,7 @@ document.querySelectorAll('.sidebar-menu a').forEach(link => {
                     }
 
                     // First get user data
-                    const userResponse = await fetch('http://localhost:8000/users/api/auth/me', {
+                    const userResponse = await fetch('https://delivery-al6z.onrender.com/users/api/auth/me', {
                         method: 'GET',
                         headers: {
                             'Authorization': `Bearer ${authToken}`
