@@ -125,15 +125,42 @@
         
             const placemark = new ymaps.Placemark([44.952116, 34.102411], {});
             map.geoObjects.add(placemark);
+// === ДОБАВЬТЕ ЭТОТ КОД ===
+        if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(
+                    (position) => {
+                        const userLat = position.coords.latitude;
+                        const userLng = position.coords.longitude;
+                        
+                        // Создаем метку пользователя
+                        const userPlacemark = new ymaps.Placemark(
+                            [userLat, userLng],
+                            { hintContent: 'Ваше местоположение' },
+                            { preset: 'islands#blueCircleIcon' }
+                        );
+                        
+                        map.geoObjects.add(userPlacemark);
+                        map.setCenter([userLat, userLng], 13);
+                        
+                        console.log('User coordinates:', userLat, userLng);
+                    },
+                    (error) => {
+                        console.error('Geolocation error:', error);
+                    },
+                    { timeout: 5000 }
+                );
+            }
+            // === КОНЕЦ ДОБАВЛЕНИЯ ===
         }
+        
         
         function calculatePrice(from, to, weight, urgency) {
             const basePrices = {
-                "Москва": 200, "Санкт-Петербург": 240, "Нижний Новгород": 260,
-                "Казань": 280, "Ростов-на-Дону": 300, "Воронеж": 300,
-                "Волгоград": 320, "Екатеринбург": 340, "Уфа": 360,
-                "Пермь": 380, "Челябинск": 400, "Омск": 440,
-                "Новосибирск": 480, "Красноярск": 520, "Симферополь": 360
+                "Москва": 100, "Санкт-Петербург": 140, "Нижний Новгород": 160,
+                "Казань": 180, "Ростов-на-Дону": 200, "Воронеж": 100,
+                "Волгоград": 220, "Екатеринбург": 240, "Уфа": 260,
+                "Пермь": 280, "Челябинск": 300, "Омск": 340,
+                "Новосибирск": 380, "Красноярск": 420, "Симферополь": 260
             };
             
             const urgencyMultipliers = { "1": 1.0, "2": 1.5, "3": 2.0 };
@@ -142,7 +169,7 @@
                 const toPrice = basePrices[to] || 400;
                 const distanceFactor = Math.abs(fromPrice - toPrice) / 100 ;
                 
-                return Math.round((fromPrice + toPrice) * distanceFactor * weight * urgencyMultipliers[urgency]);
+                return Math.round((fromPrice + toPrice) * distanceFactor * weight * urgencyMultipliers[urgency] + 300);
             }
         
         document.getElementById('delivery-form').addEventListener('submit', function(e) {

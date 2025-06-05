@@ -203,20 +203,21 @@
                 const urgencyValue = urgencyMap[urgency] || '1';
 
                 // Рассчитываем цену
-                const price = calculatePrice({ 
+                const priceData = calculatePrice({ 
                     from, 
                     to, 
                     weight, 
                     urgency: urgencyValue 
                 });
 
-                // Сохраняем ВСЕ данные
                 const deliveryData = {
                     from,
                     to,
                     weight,
                     urgency: urgencyValue,
-                    price: price
+                    tariff: priceData.tariff,
+                    insurance: priceData.insurance,
+                    price: priceData.total
                 };
                 
                 console.log('Сохраненные данные:', deliveryData); // Для отладки
@@ -234,13 +235,15 @@
     
             // Функция обновления отображения цены
             function updatePriceDisplay(data) {
-                const price = data.price || calculatePrice(data);
-                const formattedPrice = new Intl.NumberFormat('ru-RU').format(price);
+                const priceData = calculatePrice(data);
                 
-                document.querySelectorAll('.summary-item span:last-child').forEach(el => {
-                    el.textContent = `${formattedPrice} ₽`;
-                });
-                document.querySelector('.summary-total span:last-child').textContent = `${formattedPrice} ₽`;
+                // Форматируем числа с разделителями
+                const format = num => new Intl.NumberFormat('ru-RU').format(num);
+                
+                // Обновляем значения в интерфейсе
+                document.querySelector('.summary-item:nth-child(1) span:last-child').textContent = `${format(priceData.tariff)} ₽`;
+                document.querySelector('.summary-item:nth-child(2) span:last-child').textContent = `${format(priceData.insurance)} ₽`;
+                document.querySelector('.summary-total span:last-child').textContent = `${format(priceData.total)} ₽`;
             }
     
             // Функция перерасчета цены
@@ -251,36 +254,50 @@
                 const urgency = document.querySelector('.option-card.active .option-title').textContent.toLowerCase();
                 
                 if (from && to && weight && !isNaN(weight)) {
-                    const priceData = {
+                    const priceData = calculatePrice({
                         from,
                         to,
                         weight,
                         urgency: urgency === 'обычная' ? '1' : 
                                 urgency === 'экспресс' ? '2' : '3'
-                    };
-                    
-                    const newPrice = calculatePrice(priceData);
-                    updatePriceDisplay({...priceData, price: newPrice});
+                    });
+
+                    updatePriceDisplay({
+                        ...priceData,
+                        from,
+                        to,
+                        weight,
+                        urgency: urgency === 'обычная' ? '1' : 
+                                urgency === 'экспресс' ? '2' : '3'
+                    });
                 }
             }
-    
             // Функция расчета цены (должна совпадать с index.html)
             function calculatePrice(data) {
                 const basePrices = {
-                    "Москва": 200, "Санкт-Петербург": 240, "Нижний Новгород": 260,
-                "Казань": 280, "Ростов-на-Дону": 300, "Воронеж": 300,
-                "Волгоград": 320, "Екатеринбург": 340, "Уфа": 360,
-                "Пермь": 380, "Челябинск": 400, "Омск": 440,
-                "Новосибирск": 480, "Красноярск": 520, "Симферополь": 360
+                    "Москва": 100, "Санкт-Петербург": 140, "Нижний Новгород": 160,
+                    "Казань": 180, "Ростов-на-Дону": 200, "Воронеж": 200,
+                    "Волгоград": 220, "Екатеринбург": 240, "Уфа": 260,
+                    "Пермь": 380, "Челябинск": 400, "Омск": 440,
+                    "Новосибирск": 380, "Красноярск": 420, "Симферополь": 260
                 };
                 
                 const urgencyMultipliers = { "1": 1.0, "2": 1.5, "3": 2.0 };
                 
                 const fromPrice = basePrices[data.from] || 400;
                 const toPrice = basePrices[data.to] || 400;
-                const distanceFactor = Math.abs(fromPrice - toPrice) / 100 ;
+                const distanceFactor = Math.abs(fromPrice - toPrice) / 100;
                 
-                return Math.round((fromPrice + toPrice) * distanceFactor * data.weight * urgencyMultipliers[data.urgency]);
+                // Рассчитываем стоимость без страховки
+                const tariff = Math.round((fromPrice + toPrice) * distanceFactor * data.weight * urgencyMultipliers[data.urgency]);
+                const insurance = 300; // Фиксированная страховка
+                const total = tariff + insurance;
+                
+                return {
+                    tariff: tariff,
+                    insurance: insurance,
+                    total: total
+                };
             }
         });
     </script>
